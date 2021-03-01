@@ -21,8 +21,8 @@ screen = display.set_mode((800, 600))
 
 #load files and images
 font = font_path + 'space_invaders.ttf'
-images_names = ['ship', 'mystery', 'enemy1_1', 'enemy1_2', 'enemy2_1', 'enemy2_2', 'enemy3_1', 'enemy3_2',
-                'explosionblue', 'explosiongreen', 'explosionpurple', 'laser', 'enemylaser']
+images_names = ['ship', 'ship_exp0', 'ship_exp1', 'ship_exp2', 'ship_exp3', 'ship_exp4', 'ship_exp5', 'ship_exp6', 'ship_exp7', 'ship_exp8',
+                'mystery', 'alien00', 'alien01', 'alien10', 'alien11', 'alien20', 'alien21', 'a_exp0', 'a_exp1', 'a_exp2', 'laser', 'enemylaser']
 images_load_files = {name: image.load(image_path + '{}.png'.format(name)).covert_alpha() for name in images_names}
 
 barrier_position = 450
@@ -87,9 +87,9 @@ class Alien(sprite.Sprite):
     def alien_images(self):
         #a dictionary with the keys being the number of rows and values are the name that allows
         #image loader to access that specific alien images
-        images = {0: ['1_2', '1_1'], 1: ['2_2', '2_1'], 2: ['2_2', '2_1'], 3: ['3_1', '3_2'],
-                  4: ['3_1', '3_2']}
-        image1, image2 = (images_load_files['enemy{}'.format(image_number)] for image_number in images[self.row])
+        images = {0: ['00', '01'], 1: ['10', '11'], 2: ['10', '11'], 3: ['20', '21'],
+                  4: ['20', '21']}
+        image1, image2 = (images_load_files['alien{}'.format(image_number)] for image_number in images[self.row])
         self.images.append(transform.scale(image1, (40, 35)))
         self.images.append(transform.scale(image2, (40, 35)))
 
@@ -217,7 +217,7 @@ class UFO(sprite.Sprite):
         self.moveTime = 25000
         self.direction = 1
         self.timer = time.get_ticks()
-        self.
+        self.ufoEncountered = mixer.Sound(sound_path + 'mysteryentered.wav')
 
 
 
