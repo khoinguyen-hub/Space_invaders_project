@@ -23,7 +23,7 @@ screen = display.set_mode((800, 600))
 font = font_path + 'space_invaders.ttf'
 images_names = ['ship', 'ship_exp0', 'ship_exp1', 'ship_exp2', 'ship_exp3', 'ship_exp4', 'ship_exp5', 'ship_exp6', 'ship_exp7', 'ship_exp8',
                 'mystery', 'alien00', 'alien01', 'alien10', 'alien11', 'alien20', 'alien21', 'a_exp0', 'a_exp1', 'a_exp2', 'laser', 'enemylaser']
-images_load_files = {name: image.load(image_path + '{}.png'.format(name)).covert_alpha() for name in images_names}
+images_load_files = {name: image.load(image_path + '{}.png'.format(name)).convert_alpha() for name in images_names}
 
 barrier_position = 450
 alien_default_position = 65
@@ -45,7 +45,7 @@ class Ship(sprite.Sprite):
         game.screen.blit(self.image, self.rect)
 
 class Bullet(sprite.Sprite):
-    def __init__(self, x_position, y_position, direction, speed, filename, type):
+    def __init__(self, x_position, y_position, direction, speed, filename, side):
         sprite.Sprite.__init__(self)
         #passing different filename for different bullet type
         self.image = images_load_files[filename]
@@ -53,7 +53,7 @@ class Bullet(sprite.Sprite):
         self.speed = speed
         self.direction = direction
         #ship or enemy bullet
-        self.type = type
+        self.side = side
         self.filename = filename
 
     def update(self, keys, *args):
@@ -218,6 +218,149 @@ class UFO(sprite.Sprite):
         self.direction = 1
         self.timer = time.get_ticks()
         self.ufoEncountered = mixer.Sound(sound_path + 'mysteryentered.wav')
+        self.ufoEncountered.set_volume(0.3)
+        self.playMusic = True
+
+    def update(self, current_time, *args):
+        reset_timer = False
+        passed = current_time - self.timer
+        if passed > self.moveTime:
+            if (self.rect.x < 0 or self.rect.x > 800) and self.playMusic:
+                self.ufoEncountered.play()
+                self.playMusic = False
+            if self.rect.x < 840 and self. direction == 1:
+                self.ufoEncountered.fadeout(4000)
+                self.rect.x += 2
+                game.screen.blit(self.image, self.rect)
+            if self.rect.x > -100 and self.direction == -1:
+                self.rect.x -= 2
+                game.screen.blit(self.image, self.rect)
+
+        if self.rect.x > 830:
+            self.playMusic = True
+            self.direction = -1
+            reset_timer = True
+        if self.rect.x < -90:
+            self.playMusic = True
+            self.direction = 1
+            reset_timer = True
+        if passed > self.moveTime and reset_timer:
+            self.timer = current_time
+
+class AlienExplosion(sprite.Sprite):
+    def __init__(self, alien, *groups):
+        super(AlienExplosion, self).__init__(*groups)
+        self.image = images_load_files['a_exp0']
+        self.image2 = images_load_files['a_exp1']
+        self.image3 = images_load_files['a_exp2']
+        self.rect = self.image.get_rect(topleft=(alien.rect.x, alien.rect.y))
+        self.timer = time.get_ticks()
+
+    def update(self, current_time, *args):
+        passed = current_time - self.timer
+        if passed < 100:
+            game.screen.blit(self.image, self.rect)
+        elif 100 < passed <= 200:
+            game.screen.blit(self.image2, self.rect)
+        elif 200 < passed <= 300:
+            game.screen.blit(self.image3, self.rect)
+        elif 400 < passed:
+            self.kill()
+
+class UfoDie(sprite.Sprite):
+    def __init__(self, ufo, score, *groups):
+        super(UfoDie, self).__init__(*groups)
+        self.text = Text(font, 20, str(score), white, ufo.rect.x + 20, ufo.rect.y + 6)
+        self.timer = time.get_ticks()
+
+    def update(self, current_time, *args):
+        passed = current_time - self.timer
+        if passed <= 200 or 400 < passed <= 600:
+            self.text.draw(game.screen)
+        elif 600 < passed:
+            self.kill()
+
+class ShipExplosion(sprite.Sprite):
+    def __init__(self, ship, *groups):
+        super(ShipExplosion, self).__init__(*groups)
+        self.image = images_load_files['ship_exp0']
+        self.image2 = images_load_files['ship_exp1']
+        self.image3 = images_load_files['ship_exp2']
+        self.image4 = images_load_files['ship_exp3']
+        self.image5 = images_load_files['ship_exp4']
+        self.image6 = images_load_files['ship_exp5']
+        self.image7 = images_load_files['ship_exp6']
+        self.image8 = images_load_files['ship_exp7']
+        self.image9 = images_load_files['ship_exp8']
+        self.rect = self.image.get_rect(topleft=(ship.rect.x, ship.rect.y))
+        self.timer = time.get_ticks()
+
+    def update(self, current_time, *args):
+        passed = current_time - self.timer
+        if passed < 100:
+            game.screen.blit(self.image, self.rect)
+        elif 100 < passed <= 200:
+            game.screen.blit(self.image2, self.rect)
+        elif 200 < passed <= 300:
+            game.screen.blit(self.image2, self.rect)
+        elif 300 < passed <= 400:
+            game.screen.blit(self.image3, self.rect)
+        elif 400 < passed <= 500:
+            game.screen.blit(self.image4, self.rect)
+        elif 500 < passed <= 600:
+            game.screen.blit(self.image5, self.rect)
+        elif 600 < passed <= 700:
+            game.screen.blit(self.image6, self.rect)
+        elif 700 < passed <= 800:
+            game.screen.blit(self.image7, self.rect)
+        elif 800 < passed <= 900:
+            game.screen.blit(self.image8, self.rect)
+        elif 900 < passed:
+            self.kill()
+
+class ShipLife(sprite.Sprite):
+    def __init__(self, x_position, y_position):
+        sprite.Sprite.__init__(self)
+        self.image = images_load_files['ship']
+        self.image = transform.scale(self.image, (23, 23))
+        self.rect = self.image.get_rect(topleft=(x_position, y_position))
+
+    def update(self, *args):
+        game.screen.blit(self,image, self,rect)
+
+class Text(object):
+    def __init__(self, text_font, x_position, y_position, size, message, color):
+        self.font = font.Font(text_font, size)
+        self.surface = self.font.render(message, True, color)
+        self.rect = self.surface.get_rect(topleft=(x_position, y_position))
+
+    def draw(self, surface):
+        surface.blit(self.surface, self.rect)
+
+class Game(object):
+    def __init__(self):
+        mixer.pre_init(44100, -16, 1, 512)
+        init()
+        self.clock = time.Clock()
+        display.set_caption('Space Invaders')
+        self.screen = screen
+        self.background = image.load(image_path + 'background.jpg').convert()
+        self.startGame = False
+        self.mainScreen = True
+        self.gameOver = False
+        self.alienPosition = alien_default_position
+        self.title_text = Text(font, 50, 'Space', white, 164, 155)
+        self.title_text2 = Text(font, 35, 'Invaders', green, 201, 225)
+        self.game_over_text = Text(font, 50, 'Game Over', white, 250, 270)
+        self.next_round_text = Text(font, 50, 'Next Round', white, 240, 270)
+        self.alien1_text = Text(font, 25, '  =  10pts', green, 368, 270)
+        self.alien2_text = Text(font, 25, '  =  20pts', blue, 368, 370)
+
+
+
+
+
+
 
 
 
