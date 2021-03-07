@@ -3,6 +3,7 @@ from pygame import *
 import sys
 from os.path import abspath, dirname
 from random import choice
+import pygame.font
 
 base_path = abspath(dirname(__file__))
 font_path = base_path + '/fonts/'
@@ -354,6 +355,29 @@ class Text(object):
         surface.blit(self.surface, self.rect)
 
 
+class Button:
+    def __init__(self, screen, msg, fill_x, fill_y, pos_x, pos_y):
+        self.screen = screen
+        self.screen_rect = screen.get_rect()
+        self.pos_x = pos_x
+        self.pos_y = pos_y
+
+        self.width, self.height = 200, 50
+        self.button_color = (50, 50, 50)
+        self.text_color = (255, 255, 255)
+        self.font = pygame.font.Font(font, 25)
+
+        self.rect = pygame.Rect(fill_x, fill_y, self.width, self.height)
+        self.prep_msg(msg)
+
+    def prep_msg(self, msg):
+        self.msg_image = self.font.render(msg, True, self.text_color, self.button_color)
+
+    def draw(self):
+        self.screen.fill(self.button_color, self.rect)
+        self.screen.blit(self.msg_image, (self.pos_x, self.pos_y))
+
+
 class Game(object):
     def __init__(self):
         mixer.pre_init(44100, -16, 1, 512)
@@ -575,6 +599,7 @@ class Game(object):
         pygame.font.init()
         while True:
             if self.mainScreen:
+                self.hs_timer = time.get_ticks()
                 self.screen.blit(self.background, (0, 0))
                 self.title_text.draw(self.screen)
                 self.title_text2.draw(self.screen)
@@ -582,17 +607,36 @@ class Game(object):
                 self.alien2_text.draw(self.screen)
                 self.alien3_text.draw(self.screen)
                 self.alien4_text.draw(self.screen)
+                self.play_button = Button(self.screen, 'Play', 300, 470, 365, 480)
+                self.scores_button = Button(self.screen, 'High scores', 300, 530, 310, 540)
+                self.play_button.draw()
+                self.scores_button.draw()
                 self.create_main_menu()
                 for e in event.get():
                     if self.should_exit(e):
+                        with open("high_scores.txt", 'a') as f:
+                            f.write(f'Highscore was {game.score}\n')
                         sys.exit()
-                    if e.type == KEYUP:
-                        self.allBarriers = sprite.Group(self.make_barriers(0), self.make_barriers(1),
+                    if e.type == pygame.MOUSEBUTTONDOWN:
+                        mouse_x, mouse_y = pygame.mouse.get_pos()
+                        if self.play_button.rect.collidepoint(mouse_x, mouse_y):
+                            self.allBarriers = sprite.Group(self.make_barriers(0), self.make_barriers(1),
                                                         self.make_barriers(2), self.make_barriers(3))
-                        self.ship_life_group.add(self.ship_life1, self.ship_life2, self.ship_life3)
-                        self.reset(0)
-                        self.startGame = True
-                        self.mainScreen = False
+                            self.ship_life_group.add(self.ship_life1, self.ship_life2, self.ship_life3)
+                            self.reset(0)
+                            self.startGame = True
+                            self.mainScreen = False
+                        elif self.scores_button.rect.collidepoint(mouse_x, mouse_y):
+                            self.screen.blit(self.background, (0, 0))
+                            self.x_pos = 0
+                            self.y_pos = 0
+                            current_time = time.get_ticks()
+                            if current_time - self.hs_timer < 10000:
+                                with open('high_scores.txt') as f:
+                                    for line in f:
+                                        temp_string = Text(25, line, white, self.x_pos, self.y_pos)
+                                        temp_string.draw(self.screen)
+                                        self.y_pos += 50
             elif self.startGame:
                 if not self.aliens and not self.explosion_group:
                     current_time = time.get_ticks()
