@@ -383,10 +383,12 @@ class Game(object):
         mixer.pre_init(44100, -16, 1, 512)
         init()
         self.clock = time.Clock()
+        self.timer = time.get_ticks()
         display.set_caption('Space Invaders')
         self.screen = screen
         self.background = image.load(image_path + 'background.jpg').convert()
         self.startGame = False
+        self.hsScreen = False
         self.mainScreen = True
         self.gameOver = False
         self.alienPosition = alien_default_position
@@ -593,9 +595,35 @@ class Game(object):
 
         for e in event.get():
             if self.should_exit(e):
+                if self.should_exit(e):
+                    with open("high_scores.txt", 'a') as f:
+                        f.write(f'Highscore was {game.score}\n')
+                sys.exit()
+
+    def create_hs_menu(self, current_time):
+        self.screen.blit(self.background, (0, 0))
+        self.x_pos = 0
+        self.y_pos = 0
+        passed = current_time - self.timer
+        self.second = Text(20, str(passed/1000), white, 600, 500)
+        self.second.draw(self.screen)
+        if passed <= 3000:
+            with open('high_scores.txt') as f:
+                for line in f:
+                    temp_string = Text(25, line, white, self.x_pos, self.y_pos)
+                    temp_string.draw(self.screen)
+                    self.y_pos += 50
+        elif passed > 3000:
+            self.mainScreen = True
+
+        for e in event.get():
+            if self.should_exit(e):
+                with open("high_scores.txt", 'a') as f:
+                    f.write(f'Highscore was {game.score}\n')
                 sys.exit()
 
     def main(self):
+        pygame.init()
         pygame.font.init()
         while True:
             if self.mainScreen:
@@ -627,16 +655,9 @@ class Game(object):
                             self.startGame = True
                             self.mainScreen = False
                         elif self.scores_button.rect.collidepoint(mouse_x, mouse_y):
-                            self.screen.blit(self.background, (0, 0))
-                            self.x_pos = 0
-                            self.y_pos = 0
-                            current_time = time.get_ticks()
-                            if current_time - self.hs_timer < 10000:
-                                with open('high_scores.txt') as f:
-                                    for line in f:
-                                        temp_string = Text(25, line, white, self.x_pos, self.y_pos)
-                                        temp_string.draw(self.screen)
-                                        self.y_pos += 50
+                            self.mainScreen = False
+                            self.hsScreen = True
+
             elif self.startGame:
                 if not self.aliens and not self.explosion_group:
                     current_time = time.get_ticks()
@@ -674,6 +695,10 @@ class Game(object):
                 current_time = time.get_ticks()
                 self.alienPosition = alien_default_position
                 self.create_game_over(current_time)
+
+            elif self.hsScreen:
+                current_time = time.get_ticks()
+                self.create_hs_menu(current_time)
 
             display.update()
             self.clock.tick(60)
